@@ -1,0 +1,36 @@
+{
+  "name": "no-boilerplate-passport",
+  "version": "1.0.0",
+  "description": "No boilerplate configuration for Passport for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "make test",
+    "prepublish": "make publish",
+    "postpublish": "make tag"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SoftwareMarbles/no-boilerplate-passport.git"
+  },
+  "keywords": [
+    "passport",
+    "configuration"
+  ],
+  "author": "Ivan Erceg <ivan@softwaremarbles.com> (http://softwaremarbles.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SoftwareMarbles/no-boilerplate-passport/issues"
+  },
+  "homepage": "https://github.com/SoftwareMarbles/no-boilerplate-passport",
+  "dependencies": {
+    "debug": "^2.1.3",
+    "jsonschema": "^1.0.1",
+    "lodash": "^3.6.0",
+    "passport": "^0.2.1"
+  },
+  "devDependencies": {
+    "express": "^4.12.3",
+    "mocha": "^2.2.4",
+    "passport-twitter": "^1.0.3"
+  }
+}
