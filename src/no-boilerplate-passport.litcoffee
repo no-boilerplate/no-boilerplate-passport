@@ -9,6 +9,7 @@ A configuration package for [Passport](http://passportjs.org). It configures Pas
     debug = require('debug')('no-boilerplate::passport')
     passport = require('passport')
     validate = require('jsonschema').validate
+    format = require('string-format')
 
 ## Schemas
 
@@ -17,17 +18,35 @@ Root and provider schemas for easier validation of configuration data.
     rootSchema =
         type: 'object'
         properties:
+            version:
+                type: 'string'
             baseURL:
                 type: 'string'
+            commonPaths:
+                type: 'object'
+                properties:
+                    start:
+                        type: 'string'
+                    callback:
+                        type: 'string'
+                    success:
+                        type: 'string'
+                    failure:
+                        type: 'string'
+                required: []
+                additionalProperties: false
             providers:
                 type: 'object'
                 # The properties of this object depend on the provider names
                 additionalProperties: true
-        required: ['baseURL', 'providers']
+        required: ['version', 'baseURL', 'providers']
+        additionalProperties: false
 
     providerSchema =
         type: 'object'
         properties:
+            providerName:
+                type: 'string'                    
             paths:
                 type: 'object'
                 properties:
@@ -39,18 +58,24 @@ Root and provider schemas for easier validation of configuration data.
                         type: 'string'
                     failure:
                         type: 'string'
-                required: ['start', 'callback', 'success', 'failure']
+                required: []
+                additionalProperties: false
+            callbackUrlProperty:
+                type: 'string'
             config:
                 # The properties of this object depend on the expectations
                 # of the provider's strategy
                 type: 'object'
             handler:
-                type: 'object'
+                type: ['object', 'string', 'function'] # This is a hack - JSON doesn't store functions but in this case we abuse implementation detail
                 properties:
                     module:
                         type: 'string'
                     function:
                         type: 'string'
+                required: []
+                additionalProperties: false
+        required: ['callbackUrlProperty', 'config', 'handler']
         additionalProperties: false
 
 ## Public functions
@@ -59,31 +84,36 @@ Root and provider schemas for easier validation of configuration data.
 
     init = (app, config) ->
 
-        if not validate(config, rootSchema)
-            throw new Error('Bad configuration object')
+        validationErrors = validate(config, rootSchema)?.errors or [];
+        if not _.isEmpty(validationErrors)
+            throw new Error('Bad configuration object: ' + _.first(validationErrors))
 
         baseURL = config.baseURL
         debug 'Base URL for Passport configuration', baseURL
         _.each config.providers, (providerConfig, providerName) ->
 
-            if not validate(providerConfig, providerSchema)
-                throw new Error('Bad configuration object for provider ' + providerName)
+            validationErrors = validate(providerConfig, providerSchema)?.errors or [];
+            if not _.isEmpty(validationErrors)
+                throw new Error('Bad configuration object for ' + providerName + ': ' + _.first(validationErrors))
 
             strategyName = 'no-boilerplate-' + providerName + '-auth-strategy'
+            pathsProviderName = providerConfig.providerName or providerName
 
-            configureProviderStrategy strategyName, baseURL, providerName, providerConfig
-            
+            paths = getProviderPaths config.commonPaths, providerConfig.paths, pathsProviderName
+        
+            configureProviderStrategy strategyName, baseURL, paths, providerName, providerConfig
+
             # Add GET endpoint that starts with authorization
-            debug 'Setting up start endpoint on', providerConfig.paths.start
-            app.get providerConfig.paths.start, (req, res, next) ->
+            debug 'Setting up start endpoint on', paths.start
+            app.get paths.start, (req, res, next) ->
                 passport.authorize(strategyName)(req, res, next)
 
             # Add GET endpoint that ends authorization with provider's callback
-            debug 'Setting up callback endpoint on', providerConfig.paths.callback
-            app.get providerConfig.paths.callback, (req, res, next) ->
+            debug 'Setting up callback endpoint on', paths.callback
+            app.get paths.callback, (req, res, next) ->
                 options =
-                    successRedirect: providerConfig.paths.success
-                    failureRedirect: providerConfig.paths.failure
+                    successRedirect: paths.success
+                    failureRedirect: paths.failure
                 handler = (err, user, info) ->
                     if err
                         debug('Failed to authorize:', err)
@@ -93,13 +123,13 @@ Root and provider schemas for easier validation of configuration data.
 
 ## Private functions
 
-    configureProviderStrategy = (strategyName, baseURL, providerName, providerConfig) ->
+Each provider strategy object handles the callbacks in the exactly same way - by invoking the configured handler. Handler gets the collected data and the "done" callback which it must invoke once the processing has finished. This function configures the strategy with the given handler and prepares it for authentication callbacks.
+
+    configureProviderStrategy = (strategyName, baseURL, paths, providerName, providerConfig) ->
         Strategy = require('passport-' + providerName).Strategy
 
-        strategyOptions = providerConfig.config
-        strategyOptions.callbackURL = baseURL + providerConfig.paths.callback
-
-Each provider strategy object handles the callbacks in the exactly same way - by invoking the configured handler. Handler gets the collected data and the "done" callback which it must invoke once the processing has finished.
+        strategyOptions = _.clone providerConfig.config
+        strategyOptions[providerConfig.callbackUrlProperty] = baseURL + paths.callback
 
         strategy = new Strategy(strategyOptions, (token, tokenSecret, profile, done) ->
             # We test if the handler is a function before testing if it's an object
@@ -119,6 +149,21 @@ Each provider strategy object handles the callbacks in the exactly same way - by
         )
 
         passport.use strategyName, strategy
+
+We generate provider paths with configured constant strings or formats.
+
+    getProviderPaths = (commonPaths, providerPaths, providerName) ->
+        paths = {}
+        _.each ['start', 'callback', 'success', 'failure'], (pathName) ->
+            path = (providerPaths and providerPaths[pathName]) or commonPaths[pathName]
+            if path
+                path = format path, {
+                    providerName: providerName
+                }
+            else
+                throw new Error(format('Inexistent path {0} for provider {1}', path, providerName))
+            paths[pathName] = path
+        return paths
 
 ## Exporting of public functions
 
