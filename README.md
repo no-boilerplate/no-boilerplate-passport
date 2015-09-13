@@ -26,7 +26,7 @@ nbPassport(app, {
 				start: 		'/auth/twitter',
 				callback: 	'/auth/twitter/callback'
 				success:	'/account',
-				failure:	'/
+				failure:	'/'
 			},
 			callbackURLProperty: 'callbackURL',
 			config: {
@@ -62,7 +62,7 @@ If we later wanted to add a new authorization provider, say Dropbox which can be
 			start: 		'/auth/dropbox',
 			callback: 	'/auth/dropbox/callback'
 			success:	'/account',
-			failure:	'/
+			failure:	'/'
 		},
 		callbackURLProperty: 'callbackURL',
 		config: {
@@ -94,7 +94,7 @@ To solve these issues NoBoilerplate Passport provides a configuration for common
 			start: 		'/auth/{providerName}',
 			callback: 	'/auth/{providerName}/callback'
 			success:	'/account',
-			failure:	'/
+			failure:	'/'
 		},
 		handler: function(config, token, tokenSecret, profile, done) {
 			//	Create user-provider model based on the config and other arguments.
@@ -239,7 +239,7 @@ nbPassport(app, {
 			start: 		'/auth/{providerName}',
 			callback: 	'/auth/{providerName}/callback'
 			success:	'/account',
-			failure:	'/
+			failure:	'/'
 		},
 		handler: function(config, token, tokenSecret, profile, done) {
 			var model = config.custom.createModel(config, token, tokenSecret, profile);

@@ -13,5 +13,4 @@ test:
 
 dist: clean init build test
 
-publish: dist
-	npm publish
+prepublish: clean build
