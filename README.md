@@ -6,8 +6,8 @@ No boilerplate configuration for [Passport](http://passportjs.org) for [Node.js]
 
 Passport is authentication middleware for Node.js with support for many different authentication providers. It is extensible through its Strategy feature and is is very easy to setup and use. However, when you have to support more than just one provider it easily leads to a lot of boilerplate code with some minor variations in:
 
-	1.	Paths for starting authorization and for OAuth2 provider callbacks.
-	2.	Authorization handler functions for each separate provider.
+1. Paths for starting authorization and for OAuth2 provider callbacks.
+2. Authorization handler functions for each separate provider.
 
 Such boilerplate isn't required by Passport but everyone will solve it in a different manner if at all. NoBoilerplate Passport offers a no-boilerplate solution to this.
 
@@ -49,10 +49,10 @@ nbPassport(app, {
 
 We would of course have to make sure that both `passport` and `passport-twitter` are included in our `package.json` but otherwise this configures your Express `app` object to:
 
-	1.	Accept GET requests to `/auth/twitter` (as `providerName` is `twitter`) to start authorization process on Twitter. This in turn will redirect the user's browser to Twitter and inform it of the client ID and callback URL (passed to Passport through `callbackURLProperty` and automatically set to `https://your-domain.com/auth/twitter/callback`)
-	2.	Accept GET callback requests to `/auth/twitter/callback` that end authorization process by Twitter.
-	3.	Invoke your handler function if authorization was successful.
-	4.	Redirect authorization successes to `/account` path and authorization failures to `/` path.
+1. Accept GET requests to `/auth/twitter` (as `providerName` is `twitter`) to start authorization process on Twitter. This in turn will redirect the user's browser to Twitter and inform it of the client ID and callback URL (passed to Passport through `callbackURLProperty` and automatically set to `https://your-domain.com/auth/twitter/callback`)
+2. Accept GET callback requests to `/auth/twitter/callback` that end authorization process by Twitter.
+3. Invoke your handler function if authorization was successful.
+4. Redirect authorization successes to `/account` path and authorization failures to `/` path.
 
 If we later wanted to add a new authorization provider, say Dropbox which can be done through `passport-dropbox-oauth2` strategy package, we would *only* add the following to `providers` part of the configuration object:
 
@@ -80,10 +80,10 @@ If we later wanted to add a new authorization provider, say Dropbox which can be
 
 Now your `app` accepts requests to `/auth/dropbox` and `/auth/dropbox/callback` paths and can correctly request authorization on Dropbox. Unfortunately this is starting to look like boilerplate only now in configuration objects vs. code itself. We can observe the following commonalities in our example:
 
-	* `success` and `failure` paths are exactly the same
-	* `start` and `callback` paths look the same but for replacing `/twitter` with `/dropbox`
-	* `callbackURLProperty` values are exactly the same
-	* `handler` might not be the same but probably should be
+* `success` and `failure` paths are exactly the same
+* `start` and `callback` paths look the same but for replacing `/twitter` with `/dropbox`
+* `callbackURLProperty` values are exactly the same
+* `handler` might not be the same but probably should be
 
 To solve these issues NoBoilerplate Passport provides a configuration for common properties between providers. Thus instead of defining all these properties time and again they can be provided once and then user for each provider. And if the provider needs to override any of the properties - that's easy as well.
 
